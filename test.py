@@ -33,7 +33,7 @@ def holder_clear(img_list):
 def gaussian_blur(img_list):
     gaussian_list = []
     for item in img_list:
-        gaussian_list.append(cv2.GaussianBlur(item, (5, 5), 0.5))
+        gaussian_list.append(cv2.GaussianBlur(item, (3, 3), 0.5))
     return gaussian_list
 
 
@@ -95,7 +95,6 @@ def cosine(image1, image2):
 
 def cal_similarity(img_list1, img_list2):
     res1 = []
-
     log = ""
     np.set_printoptions(suppress=True)
     for index1, item1 in enumerate(img_list1):
@@ -107,16 +106,17 @@ def cal_similarity(img_list1, img_list2):
             # image1 = np.asarray(item1).flatten()
             # image2 = np.asarray(item2).flatten()
             # simi = cosine(image1,image2)
-            if simi == 0:
-                simi = 100
-                # print(str(index1)+"  "+str(index2))
+            # if simi == 0:
+            #     simi = 100
+            # print(str(index1)+"  "+str(index2))
+
             res2.append(simi)
+
             # 日志写入
             log = "正在对比第"+str(index1) + "张和第"+str(index2) + \
                 "张，相似度为："+str(float(simi))+"\n"
+            export_log(log)
 
-            with open(path+"/log_"+str(now)+".txt", "a") as f:
-                f.write(log)
         res1.append(res2)
     return res1
 
@@ -140,10 +140,16 @@ def cal_length(img_list1, img_list2):
 
 
 # 文件操作
+def export_log(log):
+    with open(path+"/log_"+str(now)+".txt", "a") as f:
+        f.write(log)
+
+
 def export_img(img_list1, img_list2, file_name):
     sub_path = path + "/" + file_name
     sub_folder = os.path.exists(sub_path)
-    if not sub_folder:  # 判断是否存在文件夹如果不存在则创建为文件夹
+    # 文件夹创建
+    if not sub_folder:
         os.makedirs(sub_path+"_1")
         os.makedirs(sub_path+"_2")
         print("---  new folder "+sub_path+"...  ---")
@@ -162,7 +168,7 @@ def export_img(img_list1, img_list2, file_name):
         counter = counter+1
 
 
-def organize_img():
+def organize_file():
     return
 
 
