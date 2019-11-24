@@ -58,7 +58,7 @@ def delete_min(img_list):
             item, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         for i in range(len(contours)):
             area = cv2.contourArea(contours[i])
-            if area < 40:
+            if area < 20:
                 cv2.drawContours(image, [contours[i]], 0, 0, -1)
         delete_list.append(image)
 
