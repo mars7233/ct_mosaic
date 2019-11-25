@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 from scipy.spatial.distance import pdist
 from matplotlib import pyplot as plt
+import shapecontext
 
 now = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 path = "./output/"+str(now)
@@ -100,8 +101,8 @@ def cal_similarity(img_list1, img_list2):
     for index1, item1 in enumerate(img_list1):
         res2 = []
         for index2, item2 in enumerate(img_list2):
-            simi = float(cv2.matchShapes(
-                item1, item2, cv2.CONTOURS_MATCH_I3, 0))
+            # simi = float(cv2.matchShapes(
+            #     item1, item2, cv2.CONTOURS_MATCH_I3, 0))
 
             # image1 = np.asarray(item1).flatten()
             # image2 = np.asarray(item2).flatten()
@@ -109,12 +110,13 @@ def cal_similarity(img_list1, img_list2):
             # if simi == 0:
             #     simi = 100
             # print(str(index1)+"  "+str(index2))
-
-            res2.append(simi)
-
+            simi = shapecontext.shape_simi(item1, item2)
             # 日志写入
-            log = "正在对比第"+str(index1) + "张和第"+str(index2) + \
-                "张，相似度为："+str(float(simi))+"\n"
+            log = "第"+str(index1) + "张和第"+str(index2) + \
+                "张相似度为："+str(float(simi))+"\n"
+            
+            print(log)
+            res2.append(simi)
             export_log(log)
 
         res1.append(res2)
@@ -139,7 +141,22 @@ def cal_length(img_list1, img_list2):
     return res1
 
 
+def inverse_color(img_list):
+    inverse_list = []
+    for item in img_list:
+
+        height, width = item.shape
+        img2 = item.copy()
+
+        for i in range(height):
+            for j in range(width):
+                img2[i, j] = (255-item[i, j])
+
+        inverse_list.append(img2)
+    return inverse_list
 # 文件操作
+
+
 def export_log(log):
     with open(path+"/log_"+str(now)+".txt", "a") as f:
         f.write(log)
@@ -221,10 +238,15 @@ def main():
     print("二值化时间："+str(binary_end-binary_start)+"秒")
     export_img(img_binary1, img_binary2, "3_binary")
 
+    # 反色
+    img_inverse1 = inverse_color(img_binary1)
+    img_inverse2 = inverse_color(img_binary2)
+    export_img(img_inverse1, img_inverse2, "n_inverse")
+
     # 轮廓提取
     outline_start = time.time()
-    img_outline1 = canny_outline(img_binary1)
-    img_outline2 = canny_outline(img_binary2)
+    img_outline1 = canny_outline(img_inverse1)
+    img_outline2 = canny_outline(img_inverse2)
     outline_end = time.time()
     print("轮廓提取时间："+str(outline_end-outline_start)+"秒")
     export_img(img_outline1, img_outline2, "4_outline")
@@ -237,7 +259,7 @@ def main():
 
     # 相似度计算
     similarity_start = time.time()
-    res = cal_similarity(img_binary1, img_binary2)
+    res = cal_similarity(img_final1, img_final2)
     # res = cal_length(img_final1, img_final2)
     similarity_end = time.time()
     print("相似度计算时间："+str(similarity_end-similarity_start)+"秒")
@@ -258,6 +280,7 @@ def main():
     print("最相似的序号是"+str(240+min1)+"和"+str(min2))
 
     # print(cv2.matchShapes(img_final1[164], img_final2[16], cv2.CONTOURS_MATCH_I2, 1))
+    shapecontext.shape_simi(img_inverse1[20], img_inverse2[16])
 
     # 绘图
     titles = ["holder clean 1_"+str(min1+240), "holder clean 2_"+str(min2),
@@ -284,5 +307,7 @@ def main():
     # cv2.destroyAllWindows()
 
 
-if __name__ == "__main__":
-    main()
+main()
+
+# if __name__ == "__main__":
+#     main()
