@@ -2,3 +2,4 @@ CT
 .vscode
 log*
 output
+__pycache__
