@@ -8,7 +8,8 @@ from matplotlib import pyplot as plt
 
 pi = 3.1415926535
 
-def canny_points(edges, points_num=30):
+
+def canny_points(edges, points_num):
     h, w = edges.shape
     #print(h, w)
 
@@ -119,7 +120,7 @@ def cost_matrix(bins_A, bins_B):
     return cost
 
 
-def shape_simi(img_A, img_B):
+def shape_simi(img_A, img_B, points=30):
 
     img_A_path = img_A
     #img_B_path = 'back_2.png'
@@ -130,30 +131,30 @@ def shape_simi(img_A, img_B):
     # img_B = cv2.imread(img_B_path)
     # img_A = cv2.cvtColor(img_A, cv2.COLOR_BGR2GRAY)
     # img_B = cv2.cvtColor(img_B, cv2.COLOR_BGR2GRAY)
-    print("A")
+    # print("A")
     # canny
     minVal_canny = 100
     maxVal_canny = 200
     edgesA = cv2.Canny(img_A, minVal_canny, maxVal_canny)
     edgesB = cv2.Canny(img_B, minVal_canny, maxVal_canny)
-    print("B")
+    # print("B")
 
     # Randomly select some points
-    pointsA = canny_points(edgesA)
-    pointsB = canny_points(edgesB)
-    print("C")
+    pointsA = canny_points(edgesA, points)
+    pointsB = canny_points(edgesB, points)
+    # print("C")
 
     # Calculate shape context
     # rotation invariance is not considered yet
     bins_A = np.array(shape_bins(pointsA))
     bins_B = np.array(shape_bins(pointsB))
-    print("D")
+    # print("D")
 
     # Calculate the cost matrix between two bins
     cost = cost_matrix(bins_A, bins_B)
     cost = cost.tolist()
     #cost = [[50,61,23,98],[57,24,54,19],[78,73,7,46],[6,86,1,88]]
-    print("E")
+    # print("E")
 
     x1 = [p[0] for p in bins_A]
     y1 = [p[1] for p in bins_A]
@@ -162,22 +163,22 @@ def shape_simi(img_A, img_B):
 
     m = Munkres()
     indexes = m.compute(cost)
-    print("F")
+    # print("F")
 
     # make_graph((y1, x1), (y2, x2), cost, indexes)
-    print("G")
+    # print("G")
     #print_matrix('Lowest cost through this matrix:', cost)
     total = 0
     for row, column in indexes:
         value = cost[row][column]
         total += value
         #print('(%d, %d) -> %d' % (row, column, value))
-    print('total cost: %d' % total)
+    # print('total cost: %d' % total)
 
-    if total < 750:
-        print('Same shape!')
-    else:
-        print('Not the Same shape')
+    # if total < 750:
+    #     print('Same shape!')
+    # else:
+    #     print('Not the Same shape')
 
     return total
 
