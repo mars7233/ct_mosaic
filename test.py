@@ -2,15 +2,22 @@ import os
 import cv2
 import time
 from datetime import datetime
-from scipy._lib.six import xrange
 import numpy as np
 from PIL import Image
 from scipy.spatial.distance import pdist
 from matplotlib import pyplot as plt
 import shapecontext
+import shutil
 
 now = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 path = "./output/"+str(now)
+
+# 文件导入
+dir1 = './CT/Sample_1_20190818_131304'
+dir2 = './CT/Sample_1_20190818_134119'
+dir3 = './CT/Sample_1_20190818_135700'
+dir4 = './CT/Sample_1_20190818_141230'
+
 # 图像处理
 
 
@@ -98,6 +105,7 @@ def cal_similarity(img_list1, img_list2):
     res1 = []
     log = ""
     np.set_printoptions(suppress=True)
+    counter = 0
     for index1, item1 in enumerate(img_list1):
         res2 = []
         for index2, item2 in enumerate(img_list2):
@@ -110,11 +118,12 @@ def cal_similarity(img_list1, img_list2):
             # if simi == 0:
             #     simi = 100
             # print(str(index1)+"  "+str(index2))
-            simi = shapecontext.shape_simi(item1, item2)
+            simi = shapecontext.shape_simi(item1, item2, 40)
             # 日志写入
-            log = "第"+str(index1) + "张和第"+str(index2) + \
+            counter = counter + 1
+            log = "（"+str(counter)+"/"+str(len(img_list1)*len(img_list2))+"）第"+str(index1) + "张和第"+str(index2) + \
                 "张相似度为："+str(float(simi))+"\n"
-            
+
             print(log)
             res2.append(simi)
             export_log(log)
@@ -154,6 +163,7 @@ def inverse_color(img_list):
 
         inverse_list.append(img2)
     return inverse_list
+
 # 文件操作
 
 
@@ -165,6 +175,7 @@ def export_log(log):
 def export_img(img_list1, img_list2, file_name):
     sub_path = path + "/" + file_name
     sub_folder = os.path.exists(sub_path)
+
     # 文件夹创建
     if not sub_folder:
         os.makedirs(sub_path+"_1")
@@ -185,7 +196,46 @@ def export_img(img_list1, img_list2, file_name):
         counter = counter+1
 
 
-def organize_file():
+def organize_file(file_index1, file_index2):
+    # 文件夹创建
+    result_path = path + "/result"
+    result_folder = os.path.exists(result_path)
+
+    if not result_folder:
+        os.makedirs(result_path)
+        print("---  new folder "+result_path+"...  ---")
+    else:
+        print("---  There is this folder!  ---")
+
+    index1 = file_index1
+    index2 = file_index2
+    old_file_list1 = os.listdir(dir1)
+    old_file_list2 = os.listdir(dir2)
+    while index1 != 0:
+        try:
+            shutil.copyfile(
+                dir1 + '/' + old_file_list1[file_index1 - index1], result_path + '/' + str(file_index1 - index1)+'.png')
+            # os.symlink(
+            #     dir1 + '/' + old_file_list1[file_index1 - index1], result_path + '/' + str(file_index1 - index1)+'.png')
+            index1 = index1 - 1
+            print("正在导出："+result_path + '/' + str(file_index1 - index1)+'.png')
+        except EOFError as e:
+            index1 = index1 - 1
+            print(e)
+
+    while index2 != len(old_file_list2):
+        try:
+            shutil.copyfile(dir1 + '/' + old_file_list2[index1], result_path + '/' + str(
+                file_index1 + file_index2 - index2+1)+'.png')
+            # os.symlink(
+            #     dir1 + '/' + old_file_list2[index1], result_path + '/' + str(file_index1 + file_index2 - index2+1)+'.png')
+            index2 = index2 + 1
+            print("正在导出："+result_path + '/' +
+                  str(file_index1 + file_index2 - index2+1)+'.png')
+        except EOFError as e:
+            index2 = index2 + 1
+            print(e)
+
     return
 
 
@@ -198,19 +248,13 @@ def main():
     else:
         print("---  There is this folder!  ---")
 
-    # 文件导入
-    dir1 = './CT/Sample_1_20190818_131304'
-    dir2 = './CT/Sample_1_20190818_134119'
-    dir3 = './CT/Sample_1_20190818_135700'
-    dir4 = './CT/Sample_1_20190818_141230'
-
     import_start = time.time()
     img_list1 = get_img(dir1)
     img_list2 = get_img(dir2)
     import_end = time.time()
     print("导入时间："+str(import_end-import_start)+"秒")
 
-    for i in xrange(240):
+    for i in range(240):
         img_list1.pop(0)
         img_list2.pop(len(img_list2)-1)
 
@@ -239,8 +283,11 @@ def main():
     export_img(img_binary1, img_binary2, "3_binary")
 
     # 反色
+    inverse_start = time.time()
     img_inverse1 = inverse_color(img_binary1)
     img_inverse2 = inverse_color(img_binary2)
+    inverse_end = time.time()
+    print("反色时间："+str(inverse_end-inverse_start)+"秒")
     export_img(img_inverse1, img_inverse2, "n_inverse")
 
     # 轮廓提取
@@ -276,35 +323,37 @@ def main():
         min_list1.append(min(item))
     min1 = min_list1.index(min(min_list1))
     min2 = res[min1].index(min(res[min1]))
-    print("相似度为："+str(res[min1][min2]))
-    print("最相似的序号是"+str(240+min1)+"和"+str(min2))
+    index_log = "最相似的序号是"+str(240+min1)+"和"+str(min2)+"\n"
+    simi_log = "相似度为："+str(res[min1][min2])+"\n"
+    print(index_log)
+    print(simi_log)
+    export_log(index_log)
+    export_log(simi_log)
 
     # print(cv2.matchShapes(img_final1[164], img_final2[16], cv2.CONTOURS_MATCH_I2, 1))
     shapecontext.shape_simi(img_inverse1[20], img_inverse2[16])
 
     # 绘图
-    titles = ["holder clean 1_"+str(min1+240), "holder clean 2_"+str(min2),
-              "gaussian 1_"+str(min1+240), "gaussian 2_"+str(min2),
-              "binary 1_"+str(min1+240), "binary 2_"+str(min2),
-              "outline 1_"+str(min1+240), "outline 2_"+str(min2),
-              "final 1_"+str(min1+240), "final 2_"+str(min2)]
-    img = [img_holder_1[min1], img_holder_2[min2],
-           img_gaussian1[min1], img_gaussian2[min2],
-           img_binary1[min1], img_binary2[min2],
-           img_outline1[min1], img_outline2[min2],
-           img_final1[min1], img_final2[min2]]
+    # titles = ["holder clean 1_"+str(min1+240), "holder clean 2_"+str(min2),
+    #           "gaussian 1_"+str(min1+240), "gaussian 2_"+str(min2),
+    #           "binary 1_"+str(min1+240), "binary 2_"+str(min2),
+    #           "outline 1_"+str(min1+240), "outline 2_"+str(min2),
+    #           "final 1_"+str(min1+240), "final 2_"+str(min2)]
+    # img = [img_holder_1[min1], img_holder_2[min2],
+    #        img_gaussian1[min1], img_gaussian2[min2],
+    #        img_binary1[min1], img_binary2[min2],
+    #        img_outline1[min1], img_outline2[min2],
+    #        img_final1[min1], img_final2[min2]]
 
-    for i in xrange(10):
-        plt.subplot(6, 2, i+1), plt.imshow(img[i], 'gray')
-        plt.title(titles[i])
-        plt.xticks([]), plt.yticks([])
+    # for i in range(10):
+    #     plt.subplot(6, 2, i+1), plt.imshow(img[i], 'gray')
+    #     plt.title(titles[i])
+    #     plt.xticks([]), plt.yticks([])
 
-    plt.show()
+    # plt.show()
 
     # 文件重排
-
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    organize_file(min1 + 240, min2)
 
 
 main()
